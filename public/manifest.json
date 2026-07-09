@@ -1,0 +1,8 @@
+{
+  "short_name": "Stem Museum",
+  "name": "Audio Stem Museum",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#171411",
+  "background_color": "#171411"
+}

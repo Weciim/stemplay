@@ -10,7 +10,25 @@ const vec = new THREE.Vector3()
 const obj = new THREE.Object3D()
 const red = new THREE.Color('#900909')
 const voiceColor = new THREE.Color('#b65c4f')
-
+const LIGHT_PALETTE = {
+  ambientNeutral: '#d8d6d0',
+  ambientWarm: '#f2c6a2',
+  ambientRose: '#e3b3c7',
+  hemiSky: '#dbe6f2',
+  hemiMint: '#9ed8cd',
+  hemiLavender: '#b8afd9',
+  groundBase: '#2c2b31',
+  groundWine: '#44212b',
+  groundTeal: '#1f3438',
+  fillA: '#f1c5a8',
+  fillB: '#9ccfd0',
+  fillC: '#c5b3e6',
+  rimA: '#ff8a5b',
+  rimB: '#4fc7d8',
+  rimC: '#d47cf3',
+  paintingA: '#f0a873',
+  paintingB: '#ffd6a8',
+}
 export default function App() {
   return (
     <>
@@ -21,7 +39,6 @@ export default function App() {
           <MuseumLights />
           <group position-y={-0.25}>
             <MuseumRoom />
-            {/* <Bust /> */}
             <MuseumSculptures />
             <Ground />
           </group>
@@ -33,6 +50,7 @@ export default function App() {
     </>
   )
 }
+
 function MuseumLights() {
   const { drums, bass, vocals, other } = useStore((state) => state.audio)
   const muted = useStore((s) => s.muted)
@@ -48,47 +66,198 @@ function MuseumLights() {
   const paintingLight = useRef()
   const roomFillA = useRef()
   const roomFillB = useRef()
+  const ambient = useRef()
+  const hemi = useRef()
+  const rimLight = useRef()
+
   const isOff = (ch) => (solo ? solo !== ch : muted[ch])
 
-  useFrame(() => {
+  const baseAmbient = useMemo(() => new THREE.Color('#ffc300'), [])
+  const warmAmber = useMemo(() => new THREE.Color('#d9925b'), [])
+  const magenta = useMemo(() => new THREE.Color('red'), [])
+  const cyan = useMemo(() => new THREE.Color('blue'), [])
+  const violet = useMemo(() => new THREE.Color('#846cff'), [])
+  const mint = useMemo(() => new THREE.Color('#57e0c2'), [])
+  const coolBase = useMemo(() => new THREE.Color('orange'), [])
+  const deepGround = useMemo(() => new THREE.Color('##fa4f5d'), [])
+  const magentaGround = useMemo(() => new THREE.Color('#44bec7'), [])
+  const tealGround = useMemo(() => new THREE.Color('#d696bb'), [])
+  const paintWarm = useMemo(() => new THREE.Color('#cf875d'), [])
+  const paintHot = useMemo(() => new THREE.Color('#ffe2ab'), [])
+
+  const cAmbient = useMemo(() => baseAmbient.clone(), [])
+  const cHemi = useMemo(() => coolBase.clone(), [])
+  const cGround = useMemo(() => deepGround.clone(), [])
+  const cFillA = useMemo(() => warmAmber.clone(), [])
+  const cFillB = useMemo(() => cyan.clone(), [])
+  const cRim = useMemo(() => magenta.clone(), [])
+  const cPaint = useMemo(() => paintWarm.clone(), [])
+
+  const drumRef = useRef(0)
+  const bassRef = useRef(0)
+  const vocalRef = useRef(0)
+  const otherRef = useRef(0)
+  const drumPulseRef = useRef(0)
+  const prevDrumSignalRef = useRef(0)
+  const phaseRef = useRef(0)
+
+  useFrame((state, delta) => {
     const d = isOff('drums') ? 0 : drums.envelope * drums.gain
     const b = isOff('bass') ? 0 : bass.envelope * bass.gain
     const v = isOff('vocals') ? 0 : vocals.envelope * vocals.gain
     const o = isOff('other') ? 0 : other.envelope * other.gain
 
-    if (warm.current) {
-      warm.current.intensity = THREE.MathUtils.lerp(warm.current.intensity, 1.9 + d * 3.0 + v * 1.0, 0.08)
-      warm.current.distance = THREE.MathUtils.lerp(warm.current.distance, 7.8 + d * 1.2, 0.08)
+    const drumBeat = !isOff('drums') && drums.signal ? 1 : 0
+    const justDrumBeat = drumBeat && !prevDrumSignalRef.current
+    prevDrumSignalRef.current = drumBeat
+
+    drumRef.current = THREE.MathUtils.damp(drumRef.current, d, 7.2, delta)
+    bassRef.current = THREE.MathUtils.damp(bassRef.current, b, 6.2, delta)
+    vocalRef.current = THREE.MathUtils.damp(vocalRef.current, v, 5.6, delta)
+    otherRef.current = THREE.MathUtils.damp(otherRef.current, o, 4.0, delta)
+
+    if (justDrumBeat) drumPulseRef.current = 1
+    drumPulseRef.current = THREE.MathUtils.damp(drumPulseRef.current, 0, 2.3, delta)
+
+    const drumEnergy = THREE.MathUtils.clamp(drumRef.current * 4.8, 0, 1)
+    const bassEnergy = THREE.MathUtils.clamp(bassRef.current * 5.2, 0, 1)
+    const vocalEnergy = THREE.MathUtils.clamp(vocalRef.current * 4.5, 0, 1)
+    const otherEnergy = THREE.MathUtils.clamp(otherRef.current * 5.0, 0, 1)
+    const drumPulse = drumPulseRef.current
+
+    const colorDrive = THREE.MathUtils.clamp(drumEnergy * 0.65 + drumPulse * 0.9 + vocals.avg * vocals.gain * 0.006 + bassEnergy * 0.35, 0, 1)
+    const pace = 0.55 + drumEnergy * 0.9 + drumPulse * 1.4 + otherEnergy * 0.35
+
+    phaseRef.current += delta * pace
+    const waveA = (Math.sin(phaseRef.current) + 1) * 0.5
+    const waveB = (Math.sin(phaseRef.current + Math.PI * 0.5) + 1) * 0.5
+    const waveC = (Math.sin(phaseRef.current + Math.PI) + 1) * 0.5
+
+    const magentaMix = THREE.MathUtils.clamp(colorDrive * (0.25 + waveA * 0.85), 0, 1)
+    const cyanMix = THREE.MathUtils.clamp(colorDrive * (0.25 + waveB * 0.95), 0, 1)
+    const violetMix = THREE.MathUtils.clamp(colorDrive * (0.12 + waveC * 0.72), 0, 1)
+    const mintMix = THREE.MathUtils.clamp(colorDrive * (0.1 + waveB * 0.48), 0, 1)
+
+    cAmbient
+      .copy(baseAmbient)
+      .lerp(warmAmber, 0.08 + drumEnergy * 0.2 + vocalEnergy * 0.08)
+      .lerp(magenta, magentaMix * 0.46)
+
+    cHemi
+      .copy(coolBase)
+      .lerp(cyan, cyanMix * 0.72)
+      .lerp(violet, violetMix * 0.34)
+      .lerp(mint, mintMix * 0.2)
+
+    cGround
+      .copy(deepGround)
+      .lerp(tealGround, cyanMix * 0.56)
+      .lerp(magentaGround, magentaMix * 0.42)
+
+    cFillA
+      .copy(warmAmber)
+      .lerp(magenta, magentaMix * 0.9)
+      .lerp(paintHot, drumPulse * 0.12)
+
+    cFillB
+      .copy(cyan)
+      .lerp(violet, violetMix * 0.62)
+      .lerp(mint, mintMix * 0.35)
+
+    cRim
+      .copy(magenta)
+      .lerp(cyan, cyanMix * 0.86)
+      .lerp(violet, violetMix * 0.88)
+
+    cPaint.copy(paintWarm).lerp(paintHot, 0.1 + colorDrive * 0.28 + vocalEnergy * 0.1)
+
+    if (ambient.current) {
+      ambient.current.color.copy(cAmbient)
+      ambient.current.intensity = THREE.MathUtils.lerp(ambient.current.intensity, 0.2 + colorDrive * 0.2, 0.08)
     }
 
-    if (top.current) top.current.intensity = THREE.MathUtils.lerp(top.current.intensity, 3.8 + v * 0.8 + o * 0.3, 0.08)
-    if (sideA.current) sideA.current.intensity = THREE.MathUtils.lerp(sideA.current.intensity, 1.35 + b * 0.7, 0.08)
-    if (sideB.current) sideB.current.intensity = THREE.MathUtils.lerp(sideB.current.intensity, 1.35 + d * 0.35 + v * 0.2, 0.08)
-    if (frontFill.current) frontFill.current.intensity = THREE.MathUtils.lerp(frontFill.current.intensity, 0.72 + o * 0.16, 0.08)
-    if (backFill.current) backFill.current.intensity = THREE.MathUtils.lerp(backFill.current.intensity, 1.05 + b * 0.16, 0.08)
-    if (ceilingFill.current) ceilingFill.current.intensity = THREE.MathUtils.lerp(ceilingFill.current.intensity, 1.25 + o * 0.12, 0.08)
-    if (paintingLight.current) paintingLight.current.intensity = THREE.MathUtils.lerp(paintingLight.current.intensity, 1.6 + o * 0.6, 0.08)
+    if (hemi.current) {
+      hemi.current.color.copy(cHemi)
+      hemi.current.groundColor.copy(cGround)
+      hemi.current.intensity = THREE.MathUtils.lerp(hemi.current.intensity, 0.38 + colorDrive * 0.38, 0.08)
+    }
+
+    if (top.current) {
+      top.current.color.copy(cAmbient)
+      top.current.intensity = THREE.MathUtils.lerp(top.current.intensity, 2.6 + colorDrive * 1.15 + vocalEnergy * 0.15, 0.08)
+    }
+
+    if (roomFillA.current) {
+      roomFillA.current.color.copy(cFillA)
+      roomFillA.current.intensity = THREE.MathUtils.lerp(roomFillA.current.intensity, 1.9 + colorDrive * 2.8 + drumPulse * 0.4, 0.08)
+      roomFillA.current.distance = THREE.MathUtils.lerp(roomFillA.current.distance, 12.5 + colorDrive * 3.5, 0.08)
+    }
+
+    if (roomFillB.current) {
+      roomFillB.current.color.copy(cFillB)
+      roomFillB.current.intensity = THREE.MathUtils.lerp(roomFillB.current.intensity, 1.9 + colorDrive * 2.9 + bassEnergy * 0.18, 0.08)
+      roomFillB.current.distance = THREE.MathUtils.lerp(roomFillB.current.distance, 12.5 + colorDrive * 3.5, 0.08)
+    }
+
+    if (sideA.current) {
+      sideA.current.color.copy(cFillA)
+      sideA.current.intensity = THREE.MathUtils.lerp(sideA.current.intensity, 0.9 + colorDrive * 1.0, 0.08)
+    }
+
+    if (sideB.current) {
+      sideB.current.color.copy(cFillB)
+      sideB.current.intensity = THREE.MathUtils.lerp(sideB.current.intensity, 0.9 + colorDrive * 1.05, 0.08)
+    }
+
+    if (frontFill.current) {
+      frontFill.current.color.copy(cAmbient)
+      frontFill.current.intensity = THREE.MathUtils.lerp(frontFill.current.intensity, 0.38 + colorDrive * 0.28, 0.08)
+    }
+
+    if (backFill.current) {
+      backFill.current.color.copy(cHemi)
+      backFill.current.intensity = THREE.MathUtils.lerp(backFill.current.intensity, 0.55 + colorDrive * 0.42, 0.08)
+    }
+
+    if (ceilingFill.current) {
+      ceilingFill.current.color.copy(cPaint)
+      ceilingFill.current.intensity = THREE.MathUtils.lerp(ceilingFill.current.intensity, 0.88 + colorDrive * 0.7, 0.08)
+    }
+
+    if (paintingLight.current) {
+      paintingLight.current.color.copy(cPaint)
+      paintingLight.current.intensity = THREE.MathUtils.lerp(paintingLight.current.intensity, 0.95 + colorDrive * 0.85, 0.08)
+      paintingLight.current.distance = THREE.MathUtils.lerp(paintingLight.current.distance, 6.8 + colorDrive * 1.5, 0.08)
+    }
+
+    if (warm.current) {
+      warm.current.color.copy(cAmbient).lerp(cPaint, 0.36)
+      warm.current.intensity = THREE.MathUtils.lerp(warm.current.intensity, 1.05 + colorDrive * 1.05 + drumEnergy * 0.15, 0.08)
+      warm.current.distance = THREE.MathUtils.lerp(warm.current.distance, 6.8 + colorDrive * 1.6, 0.08)
+    }
+
+    if (rimLight.current) {
+      rimLight.current.color.copy(cRim)
+      rimLight.current.intensity = THREE.MathUtils.lerp(rimLight.current.intensity, 0.65 + colorDrive * 2.8 + drumPulse * 0.5, 0.08)
+      rimLight.current.distance = THREE.MathUtils.lerp(rimLight.current.distance, 5.3 + colorDrive * 2.0, 0.08)
+    }
   })
 
   return (
     <>
-      <ambientLight intensity={0.55} color="#e6ddd2" />
-      <hemisphereLight intensity={0.85} color="#f5efe8" groundColor="#3a312b" />
-
-      <spotLight ref={top} position={[0, 8.4, 0]} angle={0.92} penumbra={1} intensity={6.4} color="#e3dbd1" castShadow />
-
-      <spotLight ref={sideA} position={[-7.4, 5.9, 6.8]} angle={0.5} penumbra={1} intensity={2.2} color="#ece5dc" />
-      <spotLight ref={sideB} position={[7.4, 5.7, 6.5]} angle={0.48} penumbra={1} intensity={2.1} color="#e7dfd6" />
-
-      <spotLight ref={frontFill} position={[0, 4.2, 9.0]} angle={0.58} penumbra={1} intensity={1.5} color="#e6dfd7" />
-      <spotLight ref={backFill} position={[0, 4.7, -5.8]} angle={0.62} penumbra={1} intensity={1.45} color="#ddd4ca" />
-
-      <spotLight ref={roomFillA} position={[-10.5, 6.8, 0]} target-position={[-7.8, 3.2, 0]} angle={0.95} penumbra={1} intensity={3.4} color="#d9d0c6" />
-      <spotLight ref={roomFillB} position={[10.5, 6.8, 0]} target-position={[7.8, 3.2, 0]} angle={0.95} penumbra={1} intensity={3.3} color="#d4cbc0" />
-
-      <spotLight ref={ceilingFill} position={[0, 8.8, -3.5]} target-position={[0, 6.7, -5.8]} angle={0.95} penumbra={1} intensity={2.4} color="#cfc5ba" />
-      <spotLight ref={paintingLight} position={[1.8, 3.8, -5.8]} angle={0.42} penumbra={1} intensity={1.6} distance={8} color="#d8b08c" castShadow />
-      <pointLight ref={warm} position={[0, 2.6, 0.35]} distance={9.5} intensity={3.2} decay={1.6} color="#ff6a42" />
+      <ambientLight ref={ambient} intensity={0.22} color="#9d958d" />
+      <hemisphereLight ref={hemi} intensity={0.42} color="#6d8297" groundColor="#141218" />
+      <spotLight ref={top} position={[0, 8.4, 0]} angle={0.95} penumbra={1} intensity={2.7} color="#9d958d" castShadow />
+      <spotLight ref={sideA} position={[-8.6, 6.3, 7.2]} angle={0.7} penumbra={1} intensity={0.95} color="#d9925b" castShadow />
+      <spotLight ref={sideB} position={[8.6, 6.3, 7.2]} angle={0.7} penumbra={1} intensity={0.95} color="#35d7ff" castShadow />
+      <spotLight ref={frontFill} position={[0, 4.4, 10.4]} angle={0.68} penumbra={1} intensity={0.4} color="#b7aaa0" />
+      <spotLight ref={backFill} position={[0, 4.9, -6.6]} angle={0.76} penumbra={1} intensity={0.58} color="#35d7ff" />
+      <spotLight ref={roomFillA} position={[-12, 6.8, 0]} angle={0.92} penumbra={1} intensity={2.1} distance={13} color="#ec47c7" castShadow />
+      <spotLight ref={roomFillB} position={[12, 6.8, 0]} angle={0.92} penumbra={1} intensity={2.1} distance={13} color="#35d7ff" castShadow />
+      <spotLight ref={ceilingFill} position={[0, 9.0, -2.8]} angle={0.92} penumbra={1} intensity={0.95} distance={9.5} color="#cf875d" />
+      <spotLight ref={paintingLight} position={[0, 4.2, -5.4]} angle={0.42} penumbra={1} intensity={1.0} distance={7.0} color="#cf875d" castShadow />
+      <pointLight ref={warm} position={[0, 2.7, 0.45]} distance={7.0} intensity={1.1} decay={1.5} color="#d9925b" />
+      <pointLight ref={rimLight} position={[0, 5.4, -6.2]} distance={5.6} intensity={0.7} decay={1.8} color="#ec47c7" />
     </>
   )
 }
@@ -177,6 +346,7 @@ function MuseumRoom() {
     </group>
   )
 }
+
 function Ground() {
   const floorMap = useTexture('/textures/painted_concrete_02_diff_4k.jpg')
 
@@ -199,6 +369,7 @@ function Bust() {
   const wrap = useRef()
   const ref = useRef()
   const time = useRef(0)
+  const vocalLag = useRef(0)
   const { scene, animations, materials } = useGLTF('/bust.glb')
   const clone = useMemo(() => scene.clone(true), [scene])
   const { actions, mixer } = useAnimations(animations, ref)
@@ -210,32 +381,38 @@ function Bust() {
     Object.keys(actions).forEach((key) => actions[key].play())
   }, [actions])
 
-  useFrame(() => {
+  useFrame((state, delta) => {
     const isOff = solo ? solo !== 'vocals' : muted.vocals
-    const vocalEnergy = isOff ? 0 : vocals.envelope * vocals.gain
-    const targetTime = vocalEnergy * 6.5
-    mixer.setTime((time.current = THREE.MathUtils.lerp(time.current, targetTime, vocalEnergy > 0.1 ? 0.1 : 0.04)))
+    const rawVocal = isOff ? 0 : vocals.envelope * vocals.gain
+    vocalLag.current = THREE.MathUtils.damp(vocalLag.current, rawVocal, rawVocal > vocalLag.current ? 6.5 : 4.2, delta)
+
+    const vocalEnergy = THREE.MathUtils.clamp(vocalLag.current * 1.22, 0, 1)
+    const targetTime = vocalEnergy * 7.1
+    mixer.setTime((time.current = THREE.MathUtils.lerp(time.current, targetTime, vocalEnergy > 0.1 ? 0.12 : 0.05)))
+
     if (materials.inner) {
       materials.inner.color
         .copy(red)
-        .lerp(voiceColor, vocalEnergy * 0.5)
-        .multiplyScalar(0.35 + vocalEnergy * 4.5)
+        .lerp(voiceColor, vocalEnergy * 0.58)
+        .multiplyScalar(0.38 + vocalEnergy * 5.0)
     }
+
     if (wrap.current) {
-      wrap.current.rotation.y += 0.0012 + vocalEnergy * 0.01
-      wrap.current.position.y = THREE.MathUtils.lerp(wrap.current.position.y, 0.2 + vocalEnergy * 0.32, 0.08)
-      const s = 1 + vocalEnergy * 0.06
-      wrap.current.scale.lerp(vec.set(s, s, s), 0.08)
+      wrap.current.rotation.y += 0.0012 + vocalEnergy * 0.012
+      wrap.current.position.y = THREE.MathUtils.lerp(wrap.current.position.y, 0.2 + vocalEnergy * 0.38, 0.09)
+      const s = 1 + vocalEnergy * 0.075
+      wrap.current.scale.lerp(vec.set(s, s, s), 0.09)
     }
   })
 
   return (
     <group ref={wrap} position={[0, 0.2, 0]}>
       <primitive scale={[0.23, 0.23, 0.23]} position={[0, 0.2, 0]} rotation={[0, -2.35, 0]} ref={ref} object={clone} />
-      <pointLight position={[0, 2.4, 0.5]} intensity={3.2} distance={6} color="#ff8a6d" />
+      <pointLight position={[0, 2.4, 0.5]} intensity={3.6} distance={6.4} color="#ff8a6d" />
     </group>
   )
 }
+
 function Pedestal({ width = 1.6, depth = 1.6, height = 0.5, topColor = '#d8d0c7', sideColor = '#beb5ab' }) {
   return (
     <group>
@@ -243,12 +420,10 @@ function Pedestal({ width = 1.6, depth = 1.6, height = 0.5, topColor = '#d8d0c7'
         <boxGeometry args={[width, height, depth]} />
         <meshStandardMaterial color={sideColor} roughness={0.9} metalness={0.03} />
       </mesh>
-
       <mesh position={[0, height + 0.04, 0]} castShadow receiveShadow>
         <boxGeometry args={[width + 0.12, 0.08, depth + 0.12]} />
         <meshStandardMaterial color={topColor} roughness={0.82} metalness={0.02} />
       </mesh>
-
       <mesh position={[0, 0.05, 0]} receiveShadow>
         <boxGeometry args={[width + 0.22, 0.1, depth + 0.22]} />
         <meshStandardMaterial color="#a89e94" roughness={0.96} metalness={0.01} />
@@ -256,19 +431,21 @@ function Pedestal({ width = 1.6, depth = 1.6, height = 0.5, topColor = '#d8d0c7'
     </group>
   )
 }
+
 function MuseumSculptures() {
   return (
     <group>
       <PaintingWall position={[0, 2.45, -7.62]} rotation={[0.1, -1.4, 0]} label="" />
+      <OtherChandelier position={[-1, 3, -1.6]} rotation={[0, 0, 0]} label="" />
 
-      <OtherChandelier position={[0, 4.45, -0.2]} rotation={[0, 0, 0]} label="" />
-
-      <group position={[-5.2, 0, 0.65]}>
-        <Pedestal width={1.95} depth={1.95} height={0.68} topColor="#d9d2ca" sideColor="#c6bdb3" />
-        <Bust position={[0, 0.7, 0]} />
+      <group position={[-2, 0, 0.5]} rotation={[0, 0, 0]}>
+        <Pedestal width={1.7} depth={1.7} height={0.95} topColor="#ded7cd" sideColor="#cbc2b8" />
+        <Bust position={[0, 0.97, 0]} />
       </group>
 
-      <group position={[0, 0, 1.15]}>
+      {/* <OtherHalo position={[4.6, 2.9, -2.2]} accent="#e8b98a" label="" /> */}
+
+      <group position={[1.45, 0, -1.6]} rotation={[0, 0, 0]}>
         <Pedestal width={1.7} depth={1.7} height={0.52} topColor="#d4ccc2" sideColor="#beb4aa" />
         <BassChestStatue position={[0, 0.54, 0]} rotation={[0, 0.35, 0]} label="" />
       </group>
@@ -281,10 +458,10 @@ function MuseumSculptures() {
 function RoomColumns() {
   const layout = useMemo(
     () => [
-      { position: [-2.9, 0, -2.75], scale: 0.54, amp: 0.96, rot: [0, 0.015, 0] },
-      { position: [2.9, 0, -2.75], scale: 0.54, amp: 1.04, rot: [0, -0.015, 0] },
-      { position: [-2.9, 0, 2.85], scale: 0.54, amp: 1.0, rot: [0, 0.015, 0] },
-      { position: [2.9, 0, 2.85], scale: 0.54, amp: 1.06, rot: [0, -0.015, 0] },
+      { position: [-3.4, 0, -3.4], scale: 0.54, amp: 0.96, rot: [0, 0.015, 0] },
+      { position: [3.4, 0, -3.4], scale: 0.54, amp: 1.04, rot: [0, -0.015, 0] },
+      { position: [-5, 0, 2], scale: 0.54, amp: 1.0, rot: [0, 0.015, 0] },
+      { position: [5, 0, 2], scale: 0.54, amp: 1.06, rot: [0, -0.015, 0] },
     ],
     [],
   )
@@ -326,7 +503,6 @@ function DrumColumn({ position, rotation = [0, 0, 0], scale = 1, amplitude = 1, 
 
       if (child.material) {
         child.material = Array.isArray(child.material) ? child.material.map((m) => m.clone()) : child.material.clone()
-
         const mats = Array.isArray(child.material) ? child.material : [child.material]
         mats.forEach((mat) => {
           if ('roughness' in mat) mat.roughness = Math.min(mat.roughness ?? 0.9, 0.82)
@@ -501,10 +677,7 @@ function ColumnDustBursts({ position, radius = 0.9 }) {
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           vertexColors={false}
-          uniforms={{
-            uColor: { value: new THREE.Color('#d7c7b8') },
-            uSize: { value: 22.0 },
-          }}
+          uniforms={{ uColor: { value: new THREE.Color('#d7c7b8') }, uSize: { value: 22.0 } }}
           vertexShader={`
             attribute float alpha;
             varying float vAlpha;
@@ -584,26 +757,19 @@ function OtherChandelier({ position, rotation, label }) {
     const bases = {}
     Object.entries(found).forEach(([key, node]) => {
       if (!node) return
-      bases[key] = {
-        position: node.position.clone(),
-        rotation: node.rotation.clone(),
-        scale: node.scale.clone(),
-      }
+      bases[key] = { position: node.position.clone(), rotation: node.rotation.clone(), scale: node.scale.clone() }
     })
     baseRef.current = bases
 
     const meshes = []
     scene.traverse((child) => {
       if (!child.isMesh) return
-
       child.castShadow = true
       child.receiveShadow = true
       child.frustumCulled = false
-
       if (child.material) {
         child.material = Array.isArray(child.material) ? child.material.map((m) => m.clone()) : child.material.clone()
       }
-
       const mats = Array.isArray(child.material) ? child.material : [child.material]
       mats.forEach((mat) => {
         if ('side' in mat) mat.side = THREE.DoubleSide
@@ -612,7 +778,6 @@ function OtherChandelier({ position, rotation, label }) {
         if ('emissive' in mat) mat.emissive = new THREE.Color('#000000')
         if ('emissiveIntensity' in mat) mat.emissiveIntensity = 0
       })
-
       meshes.push(child)
     })
     meshListRef.current = meshes
@@ -665,11 +830,9 @@ function OtherChandelier({ position, rotation, label }) {
       const node = nodesRef.current[name]
       const base = baseRef.current[name]
       if (!node || !base) return
-
       node.position.x = THREE.MathUtils.damp(node.position.x, base.position.x, 4.0, delta)
       node.position.z = THREE.MathUtils.damp(node.position.z, base.position.z, 4.0, delta)
       node.position.y = THREE.MathUtils.damp(node.position.y, base.position.y - peak * 0.022 - pulse * 0.015, 3.8, delta)
-
       node.rotation.x = THREE.MathUtils.damp(node.rotation.x, base.rotation.x + swayX, 3.2, delta)
       node.rotation.z = THREE.MathUtils.damp(node.rotation.z, base.rotation.z + swayZ, 3.2, delta)
       node.rotation.y = THREE.MathUtils.damp(node.rotation.y, base.rotation.y + twistY, 2.6, delta)
@@ -702,9 +865,7 @@ function OtherChandelier({ position, rotation, label }) {
       const node = nodesRef.current[name]
       const base = baseRef.current[name]
       if (!node || !base) return
-
       const spinMul = 0.28 + e * 1.45 + pulse * 0.5
-
       node.rotation.x = THREE.MathUtils.damp(node.rotation.x, base.rotation.x + speedX * spinMul * amount, 3.4, delta)
       node.rotation.y = THREE.MathUtils.damp(node.rotation.y, base.rotation.y + speedY * spinMul * amount, 3.4, delta)
       node.rotation.z = THREE.MathUtils.damp(node.rotation.z, base.rotation.z + speedZ * spinMul * amount, 3.4, delta)
@@ -753,92 +914,143 @@ function OtherChandelier({ position, rotation, label }) {
 function BassChestStatue({ position, rotation, label }) {
   const group = useRef()
   const chestLight = useRef()
+  const chestGlow = useRef()
   const chestCore = useRef()
   const morphMeshes = useRef([])
   const initialized = useRef(false)
-  const { scene } = useGLTF('/chest_bump.glb')
+  const bassLag = useRef(0)
+  const pulseRef = useRef(0)
+  const prevSignalRef = useRef(0)
+
+  const { scene: source } = useGLTF('/chest_bump.glb')
+  const scene = useMemo(() => source.clone(true), [source])
   const { bass } = useStore((state) => state.audio)
   const muted = useStore((s) => s.muted)
   const solo = useStore((s) => s.solo)
 
-  useFrame(() => {
+  useFrame((state, delta) => {
     if (!initialized.current && scene) {
       const found = []
+
       scene.traverse((child) => {
-        if (child.isMesh) {
-          child.castShadow = true
-          child.receiveShadow = true
-          if (!child.__materialCloned) {
-            child.material = Array.isArray(child.material) ? child.material.map((m) => m.clone()) : child.material.clone()
-            child.__materialCloned = true
-          }
-          const mats = Array.isArray(child.material) ? child.material : [child.material]
-          mats.forEach((mat) => {
-            mat.color.set('#575757')
-            mat.roughness = 0.88
-            mat.metalness = 0.0
-            mat.emissive = new THREE.Color(0, 0, 0)
-            mat.emissiveIntensity = 0
-          })
-          if (child.morphTargetInfluences && child.morphTargetInfluences.length > 0) found.push(child)
+        if (!child.isMesh) return
+
+        child.castShadow = true
+        child.receiveShadow = true
+        child.frustumCulled = false
+
+        if (!child.__materialCloned) {
+          child.material = Array.isArray(child.material) ? child.material.map((m) => m.clone()) : child.material.clone()
+          child.__materialCloned = true
+        }
+
+        const mats = Array.isArray(child.material) ? child.material : [child.material]
+        mats.forEach((mat) => {
+          mat.color.set('#5d5d5d')
+          mat.roughness = 0.82
+          mat.metalness = 0.02
+          if ('emissive' in mat) mat.emissive = new THREE.Color('#180000')
+          if ('emissiveIntensity' in mat) mat.emissiveIntensity = 0.0
+        })
+
+        if (child.morphTargetInfluences && child.morphTargetInfluences.length > 0) {
+          found.push(child)
         }
       })
+
       morphMeshes.current = found
       initialized.current = true
     }
 
     const isOff = solo ? solo !== 'bass' : muted.bass
     const raw = isOff ? 0 : bass.envelope * bass.gain
-    const e = THREE.MathUtils.clamp(raw * 22, 0, 1)
     const beat = !isOff && bass.signal ? 1 : 0
-    const envelopeInflation = Math.pow(e, 0.6)
+    const justBeat = beat && !prevSignalRef.current
+    prevSignalRef.current = beat
+
+    bassLag.current = THREE.MathUtils.damp(bassLag.current, raw, raw > bassLag.current ? 11.0 : 5.5, delta)
+
+    if (justBeat) pulseRef.current = 1
+    pulseRef.current = THREE.MathUtils.damp(pulseRef.current, 0, 5.8, delta)
+
+    const e = THREE.MathUtils.clamp(bassLag.current * 15.0, 0, 1)
+    const pulse = pulseRef.current
+    const inflation = THREE.MathUtils.clamp(Math.pow(e, 0.55) + pulse * 0.24, 0, 1)
 
     morphMeshes.current.forEach((mesh) => {
       for (let i = 0; i < mesh.morphTargetInfluences.length; i++) {
         const current = mesh.morphTargetInfluences[i]
-        if (beat) {
-          mesh.morphTargetInfluences[i] = 1.0
-        } else if (envelopeInflation > current) {
-          mesh.morphTargetInfluences[i] = THREE.MathUtils.lerp(current, envelopeInflation, 0.3)
-        } else {
-          mesh.morphTargetInfluences[i] = THREE.MathUtils.lerp(current, 0.0, 0.1)
-        }
+        const target = THREE.MathUtils.clamp(inflation + (beat ? 0.2 : 0), 0, 1)
+        mesh.morphTargetInfluences[i] = THREE.MathUtils.lerp(current, target, current < target ? 0.38 : 0.14)
       }
+
+      mesh.updateWorldMatrix(true, false)
+
+      const chestCenterLocal = new THREE.Vector3(-0.11, 2.8, 0.3)
+      const chestCenterWorld = chestCenterLocal.clone()
+      group.current.localToWorld(chestCenterWorld)
+
+      const meshWorldPos = new THREE.Vector3()
+      mesh.getWorldPosition(meshWorldPos)
+
+      const dist = meshWorldPos.distanceTo(chestCenterWorld)
+      const chestMask = THREE.MathUtils.clamp(1 - dist / 0.9, 0, 1)
+
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+      mats.forEach((mat) => {
+        if ('emissive' in mat) {
+          mat.emissive.set('#2a0000').lerp(new THREE.Color('#ff160f'), chestMask)
+        }
+        if ('emissiveIntensity' in mat) {
+          mat.emissiveIntensity = THREE.MathUtils.damp(mat.emissiveIntensity, chestMask * (0.25 + e * 1.8 + pulse * 0.7), 8.0, delta)
+        }
+        if ('color' in mat) {
+          const base = new THREE.Color('#5d5d5d')
+          const chestTint = new THREE.Color('#9a2a22')
+          mat.color.copy(base).lerp(chestTint, chestMask * (0.18 + e * 0.26))
+        }
+      })
     })
 
     if (chestLight.current) {
-      if (beat) {
-        chestLight.current.intensity = 18
-        chestLight.current.distance = 2.6
-      } else {
-        chestLight.current.intensity = THREE.MathUtils.lerp(chestLight.current.intensity, 1.2 + e * 6.5, 0.08)
-        chestLight.current.distance = THREE.MathUtils.lerp(chestLight.current.distance, 1.2 + e * 0.9, 0.08)
-      }
+      chestLight.current.color.set('#ff2014')
+      chestLight.current.intensity = THREE.MathUtils.damp(chestLight.current.intensity, 2.5 + e * 8.0 + pulse * 3.2, 10.0, delta)
+      chestLight.current.distance = THREE.MathUtils.damp(chestLight.current.distance, 0.75 + e * 0.28 + pulse * 0.08, 10.0, delta)
+      chestLight.current.decay = 2.8
+    }
+
+    if (chestGlow.current) {
+      chestGlow.current.color.set('#ff5a30')
+      chestGlow.current.intensity = THREE.MathUtils.damp(chestGlow.current.intensity, 0.25 + e * 0.75 + pulse * 0.25, 10.0, delta)
+      chestGlow.current.distance = THREE.MathUtils.damp(chestGlow.current.distance, 0.38 + e * 0.12, 10.0, delta)
+      chestGlow.current.decay = 3
     }
 
     if (chestCore.current) {
-      if (beat) {
-        chestCore.current.material.opacity = 0.85
-        const s = 0.17
-        chestCore.current.scale.set(s, s, s)
-      } else {
-        const s = 0.07 + e * 0.06
-        chestCore.current.scale.lerp(vec.set(s, s, s), 0.08)
-        chestCore.current.material.opacity = THREE.MathUtils.lerp(chestCore.current.material.opacity, 0.16 + e * 0.38, 0.08)
-      }
+      const s = 0.08 + e * 0.08 + pulse * 0.03
+      chestCore.current.scale.lerp(vec.set(s, s, s), 0.18)
+      chestCore.current.material.color.set('#ff2014')
+      chestCore.current.material.opacity = THREE.MathUtils.lerp(chestCore.current.material.opacity, 0.22 + e * 0.22 + pulse * 0.08, 0.18)
     }
-    if (group.current) group.current.position.y = THREE.MathUtils.lerp(group.current.position.y, position[1] + e * 0.1, 0.06)
+
+    if (group.current) {
+      group.current.position.y = THREE.MathUtils.lerp(group.current.position.y, position[1] + e * 0.16 + pulse * 0.05, 0.08)
+    }
   })
 
   return (
     <group ref={group} position={position} rotation={rotation}>
       <primitive object={scene} scale={[0.018, 0.018, 0.018]} />
+
       <group position={[-0.11, 2.8, 0.3]}>
         <mesh ref={chestCore}>
-          <sphereGeometry args={[0.15, 24, 24]} />
-          <meshBasicMaterial color="#ff2a1d" transparent opacity={0.7} toneMapped={false} blending={THREE.AdditiveBlending} depthWrite={false} />
+          <sphereGeometry args={[0.11, 24, 24]} />
+          <meshBasicMaterial color="#ff2014" transparent opacity={0.34} toneMapped={false} blending={THREE.AdditiveBlending} depthWrite={false} />
         </mesh>
-        <pointLight ref={chestLight} color="#ff1a12" intensity={10} distance={2.0} decay={1} />
+
+        <pointLight ref={chestLight} color="#ff2014" intensity={30} distance={1.0} decay={3} castShadow={false} />
+
+        <pointLight ref={chestGlow} color="#ff3a22" intensity={3.5} distance={0.42} decay={3} castShadow={false} />
       </group>
     </group>
   )
@@ -866,11 +1078,9 @@ function PaintingWall({ position, rotation, label }) {
       child.castShadow = true
       child.receiveShadow = true
       child.frustumCulled = false
-
       if (child.material) {
         child.material = Array.isArray(child.material) ? child.material.map((m) => m.clone()) : child.material.clone()
       }
-
       const mats = Array.isArray(child.material) ? child.material : [child.material]
       mats.forEach((mat) => {
         if ('roughness' in mat) mat.roughness = 0.76
@@ -878,14 +1088,13 @@ function PaintingWall({ position, rotation, label }) {
         if ('emissive' in mat) mat.emissive = new THREE.Color('#000000')
         if ('emissiveIntensity' in mat) mat.emissiveIntensity = 0
       })
-
       animated.push({
         mesh: child,
         basePosition: child.position.clone(),
         baseRotation: child.rotation.clone(),
         baseScale: child.scale.clone(),
         phase: Math.random() * Math.PI * 2,
-        speed: 0.55 + Math.random() * 0.35,
+        speed: 0.72 + Math.random() * 0.52,
       })
     })
 
@@ -897,49 +1106,49 @@ function PaintingWall({ position, rotation, label }) {
     const t = state.clock.elapsedTime
     const isOff = solo ? solo !== 'other' : muted.other
     const raw = isOff ? 0 : other.envelope * other.gain
-    const e = THREE.MathUtils.clamp(raw * 6, 0, 1)
+    const e = THREE.MathUtils.clamp(raw * 4.2, 0, 1)
     const beat = !isOff && other.signal ? 1 : 0
-    const peak = Math.pow(e, 0.82)
+    const peak = Math.pow(e, 0.76)
 
     animatedMeshes.current.forEach((item, i) => {
       const { mesh, basePosition, baseRotation, baseScale, phase, speed } = item
       const sway = Math.sin(t * speed + phase)
-      const drift = Math.cos(t * (speed * 0.78) + phase + i * 0.08)
-      const orbit = Math.sin(t * (speed * 1.1) + phase * 1.3)
+      const drift = Math.cos(t * (speed * 0.88) + phase + i * 0.08)
+      const orbit = Math.sin(t * (speed * 1.18) + phase * 1.3)
 
-      mesh.position.x = THREE.MathUtils.lerp(mesh.position.x, basePosition.x + sway * 0.018 * (0.55 + e), 0.1)
-      mesh.position.y = THREE.MathUtils.lerp(mesh.position.y, basePosition.y + drift * 0.022 * (0.55 + e), 0.1)
-      mesh.position.z = THREE.MathUtils.lerp(mesh.position.z, basePosition.z + peak * 0.026 + beat * 0.014, 0.1)
+      mesh.position.x = THREE.MathUtils.lerp(mesh.position.x, basePosition.x + sway * 0.032 * (0.7 + e), 0.14)
+      mesh.position.y = THREE.MathUtils.lerp(mesh.position.y, basePosition.y + drift * 0.036 * (0.75 + e), 0.14)
+      mesh.position.z = THREE.MathUtils.lerp(mesh.position.z, basePosition.z + peak * 0.05 + beat * 0.028, 0.14)
 
-      mesh.rotation.x = THREE.MathUtils.lerp(mesh.rotation.x, baseRotation.x + sway * 0.03 * (0.4 + e), 0.1)
-      mesh.rotation.y = THREE.MathUtils.lerp(mesh.rotation.y, baseRotation.y + orbit * 0.04 * (0.45 + e), 0.1)
-      mesh.rotation.z = THREE.MathUtils.lerp(mesh.rotation.z, baseRotation.z + drift * 0.032 * (0.45 + e), 0.1)
+      mesh.rotation.x = THREE.MathUtils.lerp(mesh.rotation.x, baseRotation.x + sway * 0.055 * (0.45 + e), 0.14)
+      mesh.rotation.y = THREE.MathUtils.lerp(mesh.rotation.y, baseRotation.y + orbit * 0.07 * (0.55 + e), 0.14)
+      mesh.rotation.z = THREE.MathUtils.lerp(mesh.rotation.z, baseRotation.z + drift * 0.06 * (0.55 + e), 0.14)
 
-      const s = 1 + peak * 0.035 + beat * 0.015
-      mesh.scale.lerp(vec.set(baseScale.x * s, baseScale.y * s, baseScale.z * s), 0.1)
+      const s = 1 + peak * 0.06 + beat * 0.03
+      mesh.scale.lerp(vec.set(baseScale.x * s, baseScale.y * s, baseScale.z * s), 0.14)
 
       const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
       mats.forEach((mat) => {
-        if ('emissive' in mat) mat.emissive.set('#c77458')
+        if ('emissive' in mat) mat.emissive.set('#d08a63')
         if ('emissiveIntensity' in mat) {
-          mat.emissiveIntensity = THREE.MathUtils.lerp(mat.emissiveIntensity, 0.04 + peak * 0.28 + beat * 0.16, 0.1)
+          mat.emissiveIntensity = THREE.MathUtils.lerp(mat.emissiveIntensity, 0.08 + peak * 0.45 + beat * 0.22, 0.12)
         }
       })
     })
 
     if (wallWrap.current) {
-      wallWrap.current.position.z = THREE.MathUtils.lerp(wallWrap.current.position.z, peak * 0.014 + beat * 0.006, 0.08)
-      wallWrap.current.rotation.z = THREE.MathUtils.lerp(wallWrap.current.rotation.z, Math.sin(t * 0.9) * 0.01 * e, 0.06)
+      wallWrap.current.position.z = THREE.MathUtils.lerp(wallWrap.current.position.z, peak * 0.025 + beat * 0.012, 0.1)
+      wallWrap.current.rotation.z = THREE.MathUtils.lerp(wallWrap.current.rotation.z, Math.sin(t * 1.1) * 0.02 * (0.4 + e), 0.08)
     }
 
     if (frameLight.current) {
-      frameLight.current.intensity = THREE.MathUtils.lerp(frameLight.current.intensity, 1.1 + peak * 2.0 + beat * 0.8, 0.08)
-      frameLight.current.distance = THREE.MathUtils.lerp(frameLight.current.distance, 3.4 + peak * 1.4, 0.08)
+      frameLight.current.intensity = THREE.MathUtils.lerp(frameLight.current.intensity, 1.2 + peak * 2.8 + beat * 1.2, 0.1)
+      frameLight.current.distance = THREE.MathUtils.lerp(frameLight.current.distance, 3.4 + peak * 1.9, 0.1)
     }
 
     if (auraLight.current) {
-      auraLight.current.intensity = THREE.MathUtils.lerp(auraLight.current.intensity, 0.45 + peak * 1.35 + beat * 0.45, 0.08)
-      auraLight.current.distance = THREE.MathUtils.lerp(auraLight.current.distance, 4.4 + peak * 1.5, 0.08)
+      auraLight.current.intensity = THREE.MathUtils.lerp(auraLight.current.intensity, 0.5 + peak * 1.8 + beat * 0.7, 0.1)
+      auraLight.current.distance = THREE.MathUtils.lerp(auraLight.current.distance, 4.5 + peak * 2.0, 0.1)
     }
   })
 
@@ -948,7 +1157,6 @@ function PaintingWall({ position, rotation, label }) {
       <group ref={wallWrap} scale={[0.98, 0.98, 0.98]}>
         <primitive object={scene} />
       </group>
-
       <pointLight ref={frameLight} position={[0, 0.12, 0.58]} color="#c07a59" intensity={1.0} distance={3.4} decay={2} />
       <pointLight ref={auraLight} position={[0, 0.3, -0.2]} color="#e3b08c" intensity={0.6} distance={4.6} decay={2} />
     </group>
@@ -1043,8 +1251,8 @@ function OtherHalo({ position, accent, label }) {
     }
     if (glow.current) {
       glow.current.color.copy(warmColor).lerp(brightColor, peak * 0.4)
-      glow.current.intensity = THREE.MathUtils.lerp(glow.current.intensity, 0.8 + e * 3.2 + peak * 1.4, 0.08)
-      glow.current.distance = THREE.MathUtils.lerp(glow.current.distance, 2.2 + e * 1.3, 0.08)
+      glow.current.intensity = THREE.MathUtils.lerp(glow.current.intensity, 0.6 + e * 2.2 + peak * 0.9, 0.04)
+      glow.current.distance = THREE.MathUtils.lerp(glow.current.distance, 2.4 + e * 1.0, 0.04)
     }
   })
 
@@ -1178,7 +1386,6 @@ function DancingDot() {
 
 function Intro() {
   const clicked = useStore((state) => state.clicked)
-  const api = useStore((state) => state.api)
   const { drums, bass, vocals, other } = useStore((state) => state.audio)
   const muted = useStore((s) => s.muted)
   const solo = useStore((s) => s.solo)
@@ -1192,10 +1399,6 @@ function Intro() {
   const camPos = useRef(new THREE.Vector3(-4.6, 3.2, 10.35))
   const camLook = useRef(new THREE.Vector3(0.15, 1.95, -0.15))
   const shake = useRef(new THREE.Vector3())
-
-  useEffect(() => {
-    api.loaded()
-  }, [api])
 
   return useFrame((state, delta) => {
     if (!clicked) return
@@ -1239,17 +1442,13 @@ function Intro() {
     shake.current.lerp(vec.set(drumShakeX, drumShakeY, drumShakeZ), 0.22)
 
     const targetX = -4.6 + mx * 1.65 + idleX + vocalEnergy * 1.2 + otherEnergy * Math.sin(t * 0.9) * 0.95 + shake.current.x
-
     const targetY = 3.2 + my * 0.75 + idleY + vocalEnergy * 0.55 + pulse * 0.08 - bassEnergy * 0.16 + shake.current.y
-
     const targetZ = 10.35 + idleZ - bassEnergy * 2.25 - vocalEnergy * 0.35 + otherEnergy * Math.cos(t * 0.55) * 0.4 + shake.current.z
 
     camPos.current.lerp(vec.set(targetX, targetY, targetZ), 0.08)
 
     const lookX = 0.15 + mx * 0.45 + vocalEnergy * 0.8 + otherEnergy * Math.sin(t * 0.7) * 0.45
-
     const lookY = 1.95 + my * 0.22 + vocalEnergy * 0.28 + pulse * 0.06
-
     const lookZ = -0.15 - otherEnergy * 0.9 + bassEnergy * 0.3 + Math.sin(t * 0.45) * 0.08
 
     camLook.current.lerp(vec.set(lookX, lookY, lookZ), 0.1)
