@@ -2,10 +2,10 @@ import React from 'react'
 import useStore from './store'
 
 const CHANNELS = [
-  { key: 'drums', label: 'DRUMS', icon: '🥁', desc: 'DrumShard + Particles + Explosions', accent: '#c0392b' },
-  { key: 'bass',  label: 'BASS',  icon: '🎸', desc: 'Bass Chest Resonance',             accent: '#e67e22' },
-  { key: 'vocals',label: 'VOCALS',icon: '🎤', desc: 'Vocal Fracture Bust',              accent: '#8e44ad' },
-  { key: 'other', label: 'OTHER', icon: '🎨', desc: 'Painting Field + Other Halo',      accent: '#2980b9' },
+  { key: 'drums', label: 'DRUMS', icon: '🥁', desc: 'Lattice Columns + Particles', accent: '#c0392b' },
+  { key: 'bass',  label: 'BASS',  icon: '🎸', desc: 'Chest Statue Resonance',      accent: '#e67e22' },
+  { key: 'vocals',label: 'VOCALS',icon: '🎤', desc: 'Vocal Fracture Bust',          accent: '#8e44ad' },
+  { key: 'other', label: 'OTHER', icon: '🎨', desc: 'Chandelier + Painting',        accent: '#2980b9' },
 ]
 
 export default function Sidebar() {
@@ -13,16 +13,26 @@ export default function Sidebar() {
   const solo   = useStore((s) => s.solo)
   const api    = useStore((s) => s.api)
   const clicked = useStore((s) => s.clicked)
+  const trackName = useStore((s) => s.trackName)
 
   if (!clicked) return null
 
   return (
     <div style={styles.sidebar}>
+      {/* Now Playing + Back */}
       <div style={styles.header}>
-        <span style={styles.headerTitle}>STEMS</span>
-        <button style={styles.resetBtn} onClick={() => api.unmuteAll()} title="Unmute all">
-          ↺
-        </button>
+        <div style={styles.headerLeft}>
+          <span style={styles.headerTitle}>STEMS</span>
+          {trackName && <span style={styles.trackLabel}>{trackName}</span>}
+        </div>
+        <div style={styles.headerRight}>
+          <button style={styles.resetBtn} onClick={() => api.unmuteAll()} title="Unmute all">
+            ↺
+          </button>
+          <button style={styles.backBtn} onClick={() => api.reset()} title="Back to track selection">
+            ✕
+          </button>
+        </div>
       </div>
 
       {CHANNELS.map(({ key, label, icon, desc, accent }) => {
@@ -39,7 +49,7 @@ export default function Sidebar() {
                 onClick={() => api.toggleMute(key)}
                 title={isMuted ? 'Unmute' : 'Mute'}
               >
-                {isMuted ? 'M' : 'M'}
+                M
               </button>
 
               <button
@@ -67,7 +77,7 @@ const styles = {
     top: '50%',
     right: 16,
     transform: 'translateY(-50%)',
-    width: 168,
+    width: 178,
     background: 'rgba(18,16,14,0.82)',
     backdropFilter: 'blur(12px)',
     borderRadius: 12,
@@ -82,11 +92,23 @@ const styles = {
   },
   header: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     padding: '0 14px 10px',
     borderBottom: '1px solid rgba(255,255,255,0.07)',
     marginBottom: 4,
+  },
+  headerLeft: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 3,
+    flex: 1,
+    minWidth: 0,
+  },
+  headerRight: {
+    display: 'flex',
+    gap: 4,
+    flexShrink: 0,
   },
   headerTitle: {
     fontSize: 10,
@@ -94,11 +116,28 @@ const styles = {
     color: 'rgba(255,255,255,0.35)',
     fontWeight: 600,
   },
+  trackLabel: {
+    fontSize: 8,
+    color: 'rgba(255,255,255,0.22)',
+    letterSpacing: 0.5,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
   resetBtn: {
     background: 'none',
     border: 'none',
     color: 'rgba(255,255,255,0.3)',
     fontSize: 16,
+    cursor: 'pointer',
+    padding: '0 2px',
+    lineHeight: 1,
+  },
+  backBtn: {
+    background: 'none',
+    border: 'none',
+    color: 'rgba(255,255,255,0.3)',
+    fontSize: 13,
     cursor: 'pointer',
     padding: '0 2px',
     lineHeight: 1,

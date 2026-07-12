@@ -1,0 +1,11 @@
+node_modules
+.git
+docs
+docker
+__pycache__
+*.pyc
+backend/uploads
+backend/separated_web
+thumbnail.png
+abstract.tex
+*.blend

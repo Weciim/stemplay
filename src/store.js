@@ -2,8 +2,7 @@ import create from 'zustand'
 import { addEffect } from '@react-three/fiber'
 import { uploadAndSeparate, separateFromSoundCloud, stemUrl, waitForJob } from './api'
 
-// Pre-separated local test tracks — stems already sit in public/audio/<folder>/
-// Update the folder name / filenames below to match exactly what you have on disk.
+// Pre-separated local test tracks
 export const TEST_TRACKS = [
   {
     id: 'drake-overdrive',
@@ -30,7 +29,6 @@ export const TEST_TRACKS = [
 async function createAudio(url, { threshold = 0, expire = 0 } = {}) {
   const context = new (window.AudioContext || window.webkitAudioContext)()
   const res = await fetch(url)
-  console.log(url)
   if (!res.ok) throw new Error(`HTTP ${res.status} while loading ${url}`)
   const arrayBuffer = await res.arrayBuffer()
   if (!arrayBuffer?.byteLength) throw new Error(`Empty audio buffer for ${url}`)
@@ -62,14 +60,8 @@ async function createAudio(url, { threshold = 0, expire = 0 } = {}) {
   let envelope = 0
 
   const state = {
-    context,
-    source,
-    analyser,
-    data,
-    gain: 1,
-    signal: false,
-    avg: 0,
-    envelope: 0,
+    context, source, analyser, data,
+    gain: 1, signal: false, avg: 0, envelope: 0,
     update() {
       const now = Date.now()
       let value = 0
@@ -77,12 +69,11 @@ async function createAudio(url, { threshold = 0, expire = 0 } = {}) {
       for (let i = 0; i < data.length; i++) value += data[i]
       const avg = value / data.length
       state.avg = avg
-
       const normalized = avg / 255
-      envelope = normalized > envelope ? envelope + (normalized - envelope) * 0.22 : envelope + (normalized - envelope) * 0.06
-
+      envelope = normalized > envelope
+        ? envelope + (normalized - envelope) * 0.22
+        : envelope + (normalized - envelope) * 0.06
       state.envelope = envelope
-
       if (threshold && avg > threshold && now - time > expire) {
         time = Date.now()
         state.signal = true
@@ -98,12 +89,8 @@ async function createAudio(url, { threshold = 0, expire = 0 } = {}) {
       if (context.state === 'suspended') await context.resume()
     },
     stop() {
-      try {
-        source.stop(0)
-      } catch {}
-      try {
-        context.close()
-      } catch {}
+      try { source.stop(0) } catch (_) {}
+      try { context.close() } catch (_) {}
     },
   }
 
@@ -111,22 +98,13 @@ async function createAudio(url, { threshold = 0, expire = 0 } = {}) {
 }
 
 const mockData = () => ({
-  signal: false,
-  avg: 0,
-  gain: 1,
-  data: [],
-  envelope: 0,
-  setGain() {},
-  update() {},
-  resume: async () => {},
-  stop() {},
+  signal: false, avg: 0, gain: 1, data: [], envelope: 0,
+  setGain() {}, update() {}, resume: async () => {}, stop() {},
 })
 
 const stopAudioBundle = (audio) => {
   Object.values(audio || {}).forEach((stem) => {
-    try {
-      stem?.stop?.()
-    } catch {}
+    try { stem?.stop?.() } catch (_) {}
   })
 }
 
@@ -136,6 +114,8 @@ const emptyAudio = () => ({
   vocals: mockData(),
   other: mockData(),
 })
+
+let effectRegistered = false
 
 const useStore = create((set, get) => ({
   loaded: false,
@@ -235,9 +215,10 @@ const useStore = create((set, get) => ({
       })
     },
 
-    // NEW: load a bundled/local pre-separated test track (no upload, no separation job)
     async loadTestTrack(trackIdOrObject) {
-      const track = typeof trackIdOrObject === 'string' ? TEST_TRACKS.find((t) => t.id === trackIdOrObject) : trackIdOrObject
+      const track = typeof trackIdOrObject === 'string'
+        ? TEST_TRACKS.find((t) => t.id === trackIdOrObject)
+        : trackIdOrObject
 
       if (!track) throw new Error('Unknown test track')
 
@@ -290,29 +271,30 @@ const useStore = create((set, get) => ({
 
     async start() {
       const audio = get().audio
-      const files = Object.values(audio)
       const track = get().track
 
-      for (const file of files) await file.resume?.()
-      files.forEach(({ source }) => source?.start(0))
+      for (const stem of Object.values(audio)) await stem.resume?.()
+      Object.values(audio).forEach((stem) => stem.source?.start(0))
 
       set({ clicked: true })
 
-      addEffect(() => {
-        const { muted, solo } = get()
-        files.forEach(({ update }) => update?.())
-
-        const channels = ['drums', 'bass', 'vocals', 'other']
-        channels.forEach((ch) => {
-          const stem = audio[ch]
-          if (!stem?.setGain) return
-          const isOff = solo ? solo !== ch : muted[ch]
-          const target = isOff ? 0 : 1
-          if (Math.abs(stem.gain - target) > 0.005) stem.setGain(target)
+      if (!effectRegistered) {
+        effectRegistered = true
+        addEffect(() => {
+          const { audio, muted, solo } = get()
+          const channels = ['drums', 'bass', 'vocals', 'other']
+          channels.forEach((ch) => {
+            const stem = audio[ch]
+            if (!stem?.update) return
+            stem.update()
+            if (!stem.setGain) return
+            const isOff = solo ? solo !== ch : muted[ch]
+            const target = isOff ? 0 : 1
+            if (Math.abs(stem.gain - target) > 0.005) stem.setGain(target)
+          })
+          if (audio.drums.signal) track.kicks++
         })
-
-        if (audio.drums.signal) track.kicks++
-      })
+      }
     },
 
     toggleMute(channel) {
