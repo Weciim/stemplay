@@ -15,6 +15,16 @@ export const TEST_TRACKS = [
       other: '/audio/Drake-Overdrive/other.wav',
     },
   },
+  {
+    id: 'du-bist-genug',
+    label: 'Du Bist Genug (test)',
+    stems: {
+      drums: '/audio/Du-Bist-Genug/drums.wav',
+      bass: '/audio/Du-Bist-Genug/bass.wav',
+      vocals: '/audio/Du-Bist-Genug/vocals.wav',
+      other: '/audio/Du-Bist-Genug/other.wav',
+    },
+  },
 ]
 
 async function createAudio(url, { threshold = 0, expire = 0 } = {}) {
