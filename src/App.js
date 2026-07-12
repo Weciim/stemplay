@@ -916,14 +916,18 @@ function BassChestStatue({ position, rotation, label }) {
   const chestLight = useRef()
   const chestGlow = useRef()
   const chestCore = useRef()
+
   const morphMeshes = useRef([])
   const initialized = useRef(false)
+
   const bassLag = useRef(0)
   const pulseRef = useRef(0)
   const prevSignalRef = useRef(0)
+  const inflationRef = useRef(0)
 
   const { scene: source } = useGLTF('/chest_bump.glb')
   const scene = useMemo(() => source.clone(true), [source])
+
   const { bass } = useStore((state) => state.audio)
   const muted = useStore((s) => s.muted)
   const solo = useStore((s) => s.solo)
@@ -940,17 +944,19 @@ function BassChestStatue({ position, rotation, label }) {
         child.frustumCulled = false
 
         if (!child.__materialCloned) {
-          child.material = Array.isArray(child.material) ? child.material.map((m) => m.clone()) : child.material.clone()
+          child.material = Array.isArray(child.material) ? child.material.map((material) => material.clone()) : child.material.clone()
+
           child.__materialCloned = true
         }
 
         const mats = Array.isArray(child.material) ? child.material : [child.material]
+
         mats.forEach((mat) => {
-          mat.color.set('#5d5d5d')
-          mat.roughness = 0.82
-          mat.metalness = 0.02
-          if ('emissive' in mat) mat.emissive = new THREE.Color('#180000')
-          if ('emissiveIntensity' in mat) mat.emissiveIntensity = 0.0
+          if ('color' in mat) mat.color.set('#4c4c4c')
+          if ('roughness' in mat) mat.roughness = 0.8
+          if ('metalness' in mat) mat.metalness = 0.03
+          if ('emissive' in mat) mat.emissive = new THREE.Color('#120000')
+          if ('emissiveIntensity' in mat) mat.emissiveIntensity = 0
         })
 
         if (child.morphTargetInfluences && child.morphTargetInfluences.length > 0) {
@@ -963,25 +969,44 @@ function BassChestStatue({ position, rotation, label }) {
     }
 
     const isOff = solo ? solo !== 'bass' : muted.bass
-    const raw = isOff ? 0 : bass.envelope * bass.gain
+    const rawBass = isOff ? 0 : bass.envelope * bass.gain
+
     const beat = !isOff && bass.signal ? 1 : 0
     const justBeat = beat && !prevSignalRef.current
     prevSignalRef.current = beat
 
-    bassLag.current = THREE.MathUtils.damp(bassLag.current, raw, raw > bassLag.current ? 11.0 : 5.5, delta)
+    // Bass energy follows the input quickly, then releases smoothly.
+    bassLag.current = THREE.MathUtils.damp(bassLag.current, rawBass, rawBass > bassLag.current ? 14.0 : 9.0, delta)
 
+    // Short transient for a visible bump on every bass hit.
     if (justBeat) pulseRef.current = 1
-    pulseRef.current = THREE.MathUtils.damp(pulseRef.current, 0, 5.8, delta)
 
-    const e = THREE.MathUtils.clamp(bassLag.current * 15.0, 0, 1)
+    pulseRef.current = THREE.MathUtils.damp(pulseRef.current, 0, 8.5, delta)
+
+    const bassEnergy = THREE.MathUtils.clamp(bassLag.current * 15.0, 0, 1)
+
     const pulse = pulseRef.current
-    const inflation = THREE.MathUtils.clamp(Math.pow(e, 0.55) + pulse * 0.24, 0, 1)
+
+    // Continuous bass provides only a small "breathing" hold.
+    // Hits provide the large visible chest expansion.
+    const sustainedInflation = Math.pow(bassEnergy, 0.82) * 0.28
+    const hitInflation = pulse * 0.88
+
+    const targetInflation = THREE.MathUtils.clamp(sustainedInflation + hitInflation, 0, 1)
+
+    // Quick inhale, smooth but clearly visible exhale.
+    inflationRef.current = THREE.MathUtils.damp(inflationRef.current, targetInflation, targetInflation > inflationRef.current ? 15.0 : 7.0, delta)
+
+    const inflation = inflationRef.current
+
+    const MAX_MORPH_INFLATION = 2.5
+    const morphAmount = inflation * MAX_MORPH_INFLATION
 
     morphMeshes.current.forEach((mesh) => {
       for (let i = 0; i < mesh.morphTargetInfluences.length; i++) {
         const current = mesh.morphTargetInfluences[i]
-        const target = THREE.MathUtils.clamp(inflation + (beat ? 0.2 : 0), 0, 1)
-        mesh.morphTargetInfluences[i] = THREE.MathUtils.lerp(current, target, current < target ? 0.38 : 0.14)
+
+        mesh.morphTargetInfluences[i] = THREE.MathUtils.damp(current, morphAmount, morphAmount > current ? 18.0 : 9.0, delta)
       }
 
       mesh.updateWorldMatrix(true, false)
@@ -993,48 +1018,66 @@ function BassChestStatue({ position, rotation, label }) {
       const meshWorldPos = new THREE.Vector3()
       mesh.getWorldPosition(meshWorldPos)
 
-      const dist = meshWorldPos.distanceTo(chestCenterWorld)
-      const chestMask = THREE.MathUtils.clamp(1 - dist / 0.9, 0, 1)
+      const distanceFromChest = meshWorldPos.distanceTo(chestCenterWorld)
+      const chestMask = THREE.MathUtils.clamp(1 - distanceFromChest / 0.9, 0, 1)
 
       const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+
       mats.forEach((mat) => {
+        const localRed = chestMask * inflation
+
         if ('emissive' in mat) {
-          mat.emissive.set('#2a0000').lerp(new THREE.Color('#ff160f'), chestMask)
+          mat.emissive.set('#170000').lerp(new THREE.Color('#ff0000'), localRed)
         }
+
         if ('emissiveIntensity' in mat) {
-          mat.emissiveIntensity = THREE.MathUtils.damp(mat.emissiveIntensity, chestMask * (0.25 + e * 1.8 + pulse * 0.7), 8.0, delta)
+          mat.emissiveIntensity = THREE.MathUtils.damp(mat.emissiveIntensity, chestMask * (0.08 + inflation * 4.6), 10.0, delta)
         }
+
         if ('color' in mat) {
-          const base = new THREE.Color('#5d5d5d')
-          const chestTint = new THREE.Color('#9a2a22')
-          mat.color.copy(base).lerp(chestTint, chestMask * (0.18 + e * 0.26))
+          const stoneColor = new THREE.Color('#4c4c4c')
+          const deepRed = new THREE.Color('#8b0505')
+          const hotRed = new THREE.Color('#ef160d')
+
+          mat.color
+            .copy(stoneColor)
+            .lerp(deepRed, chestMask * (0.08 + inflation * 0.48))
+            .lerp(hotRed, chestMask * Math.pow(inflation, 1.75) * 0.3)
         }
       })
     })
 
     if (chestLight.current) {
-      chestLight.current.color.set('#ff2014')
-      chestLight.current.intensity = THREE.MathUtils.damp(chestLight.current.intensity, 2.5 + e * 8.0 + pulse * 3.2, 10.0, delta)
-      chestLight.current.distance = THREE.MathUtils.damp(chestLight.current.distance, 0.75 + e * 0.28 + pulse * 0.08, 10.0, delta)
-      chestLight.current.decay = 2.8
+      chestLight.current.color.set('#ff0800')
+
+      chestLight.current.intensity = THREE.MathUtils.damp(chestLight.current.intensity, 2.0 + inflation * 300.0, 12.0, delta)
+      chestLight.current.distance = THREE.MathUtils.damp(chestLight.current.distance, 0.75 + inflation * 1.05, 11.0, delta)
+
+      chestLight.current.decay = 2.15
     }
 
     if (chestGlow.current) {
-      chestGlow.current.color.set('#ff5a30')
-      chestGlow.current.intensity = THREE.MathUtils.damp(chestGlow.current.intensity, 0.25 + e * 0.75 + pulse * 0.25, 10.0, delta)
-      chestGlow.current.distance = THREE.MathUtils.damp(chestGlow.current.distance, 0.38 + e * 0.12, 10.0, delta)
-      chestGlow.current.decay = 3
+      chestGlow.current.color.set('#ff1a08')
+
+      chestGlow.current.intensity = THREE.MathUtils.damp(chestGlow.current.intensity, 0.12 + inflation * 2.1, 10.0, delta)
+
+      chestGlow.current.distance = THREE.MathUtils.damp(chestGlow.current.distance, 0.32 + inflation * 0.28, 10.0, delta)
+
+      chestGlow.current.decay = 2.4
     }
 
     if (chestCore.current) {
-      const s = 0.08 + e * 0.08 + pulse * 0.03
-      chestCore.current.scale.lerp(vec.set(s, s, s), 0.18)
-      chestCore.current.material.color.set('#ff2014')
-      chestCore.current.material.opacity = THREE.MathUtils.lerp(chestCore.current.material.opacity, 0.22 + e * 0.22 + pulse * 0.08, 0.18)
+      const coreScale = 0.075 + inflation * 0.19
+
+      chestCore.current.scale.lerp(vec.set(coreScale, coreScale, coreScale), 0.18)
+
+      chestCore.current.material.color.set('#6d0000').lerp(new THREE.Color('#ff0a00'), inflation)
+
+      chestCore.current.material.opacity = THREE.MathUtils.damp(chestCore.current.material.opacity, 0.13 + inflation * 0.56, 10.0, delta)
     }
 
     if (group.current) {
-      group.current.position.y = THREE.MathUtils.lerp(group.current.position.y, position[1] + e * 0.16 + pulse * 0.05, 0.08)
+      group.current.position.y = THREE.MathUtils.damp(group.current.position.y, position[1] + inflation * 0.14, 8.0, delta)
     }
   })
 
@@ -1044,13 +1087,13 @@ function BassChestStatue({ position, rotation, label }) {
 
       <group position={[-0.11, 2.8, 0.3]}>
         <mesh ref={chestCore}>
-          <sphereGeometry args={[0.11, 24, 24]} />
-          <meshBasicMaterial color="#ff2014" transparent opacity={0.34} toneMapped={false} blending={THREE.AdditiveBlending} depthWrite={false} />
+          <sphereGeometry args={[0.13, 24, 24]} />
+          <meshBasicMaterial color="#8b0000" transparent opacity={0.2} toneMapped={false} blending={THREE.AdditiveBlending} depthWrite={false} />
         </mesh>
 
-        <pointLight ref={chestLight} color="#ff2014" intensity={30} distance={1.0} decay={3} castShadow={false} />
+        <pointLight ref={chestLight} color="#ff0800" intensity={1.5} distance={0.65} decay={2.15} castShadow={false} />
 
-        <pointLight ref={chestGlow} color="#ff3a22" intensity={3.5} distance={0.42} decay={3} castShadow={false} />
+        <pointLight ref={chestGlow} color="#ff1a08" intensity={0.12} distance={0.32} decay={2.4} castShadow={false} />
       </group>
     </group>
   )
