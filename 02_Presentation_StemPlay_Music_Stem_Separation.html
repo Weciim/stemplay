@@ -1,0 +1,1097 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>STEMPlay - Presentation</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/black.min.css"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+
+      :root {
+        --r-background-color: #0e0d0c;
+        --r-main-font: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+        --r-heading-font:
+          "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+        --r-main-color: #e8e4df;
+        --r-heading-color: #ffffff;
+        --r-link-color: #c0392b;
+        --r-main-font-size: 32px;
+        --r-heading1-size: 2.8em;
+        --r-heading2-size: 1.8em;
+        --r-heading3-size: 1.2em;
+      }
+
+      .reveal {
+        font-weight: 300;
+      }
+
+      .reveal h1,
+      .reveal h2,
+      .reveal h3 {
+        font-weight: 700;
+        text-transform: none;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+      }
+
+      .reveal h1 {
+        font-weight: 800;
+      }
+
+      /* Title slide */
+      .title-slide h1 {
+        font-size: 3.2em;
+        font-weight: 900;
+        background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.1em;
+      }
+
+      .title-slide .subtitle {
+        font-size: 0.65em;
+        color: rgba(255, 255, 255, 0.4);
+        font-weight: 400;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 1.5em;
+      }
+
+      .title-slide .authors {
+        font-size: 0.55em;
+        color: rgba(255, 255, 255, 0.5);
+        font-weight: 400;
+      }
+
+      .title-slide .authors span {
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 500;
+      }
+
+      /* Big statement slides */
+      .statement h2 {
+        font-size: 2.4em;
+        font-weight: 800;
+        line-height: 1.2;
+        max-width: 14em;
+        margin: 0 auto;
+      }
+
+      .statement .accent {
+        color: #c0392b;
+      }
+
+      /* Comparison slide */
+      .comparison {
+        display: flex;
+        gap: 3em;
+        align-items: center;
+        justify-content: center;
+        margin-top: 1em;
+      }
+
+      .comparison .side {
+        flex: 1;
+        text-align: center;
+        max-width: 400px;
+      }
+
+      .comparison .side-label {
+        font-size: 0.5em;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: rgba(255, 255, 255, 0.796);
+        margin-bottom: 0.8em;
+      }
+
+      .comparison .visual-box {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 2em 1.5em;
+        min-height: 180px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .bars {
+        display: flex;
+        gap: 6px;
+        align-items: flex-end;
+        height: 120px;
+      }
+
+      .bars .bar {
+        width: 14px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 3px 3px 0 0;
+        transition: height 0.3s;
+      }
+
+      .stems-visual {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        width: 100%;
+      }
+
+      .stem-chip {
+        padding: 0.5em 0.8em;
+        border-radius: 8px;
+        font-size: 0.45em;
+        font-weight: 600;
+        text-align: center;
+        letter-spacing: 0.05em;
+      }
+
+      .stem-drums {
+        background: rgba(192, 57, 43, 0.25);
+        border: 1px solid rgba(192, 57, 43, 0.5);
+        color: #e74c3c;
+      }
+      .stem-bass {
+        background: rgba(230, 126, 34, 0.25);
+        border: 1px solid rgba(230, 126, 34, 0.5);
+        color: #e67e22;
+      }
+      .stem-vocals {
+        background: rgba(142, 68, 173, 0.25);
+        border: 1px solid rgba(142, 68, 173, 0.5);
+        color: #9b59b6;
+      }
+      .stem-other {
+        background: rgba(41, 128, 185, 0.25);
+        border: 1px solid rgba(41, 128, 185, 0.5);
+        color: #3498db;
+      }
+
+      .vs-divider {
+        font-size: 0.5em;
+        color: rgba(255, 255, 255, 0.2);
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        align-self: center;
+      }
+
+      /* Stem mapping diagram */
+      .stem-flow {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2em;
+        margin-top: 0.5em;
+      }
+
+      .stem-row {
+        display: flex;
+        align-items: center;
+        gap: 1em;
+        font-size: 0.55em;
+      }
+
+      .stem-name {
+        width: 100px;
+        padding: 0.5em 0.8em;
+        border-radius: 8px;
+        font-weight: 700;
+        text-align: center;
+        flex-shrink: 0;
+      }
+
+      .stem-arrow {
+        color: rgba(255, 255, 255, 0.2);
+        font-size: 1.4em;
+        flex-shrink: 0;
+      }
+
+      .stem-target {
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 400;
+      }
+
+      .stem-behavior {
+        color: rgba(255, 255, 255, 0.35);
+        font-style: italic;
+        margin-left: 0.5em;
+      }
+
+      /* Pipeline / architecture */
+      .pipeline {
+        display: flex;
+        align-items: center;
+        gap: 0.4em;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 1.5em;
+      }
+
+      .pipeline .node {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        padding: 0.7em 1em;
+        font-size: 0.48em;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.8);
+        text-align: center;
+        min-width: 100px;
+      }
+
+      .pipeline .node.highlight {
+        border-color: rgba(192, 57, 43, 0.5);
+        background: rgba(192, 57, 43, 0.12);
+        color: #e8e4df;
+      }
+
+      .pipeline .pipe-arrow {
+        color: rgba(255, 255, 255, 0.15);
+        font-size: 1.2em;
+        flex-shrink: 0;
+      }
+
+      /* Audio analysis */
+      .analysis-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1.5em;
+        margin-top: 1.5em;
+      }
+
+      .analysis-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 1.5em 1.2em;
+        text-align: center;
+      }
+
+      .analysis-card .card-icon {
+        font-size: 1.8em;
+        margin-bottom: 0.3em;
+        opacity: 0.7;
+      }
+
+      .analysis-card h3 {
+        font-size: 0.55em;
+        font-weight: 700;
+        margin: 0 0 0.4em 0;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+
+      .analysis-card p {
+        font-size: 0.4em;
+        color: rgba(255, 255, 255, 0.45);
+        line-height: 1.5;
+        margin: 0;
+      }
+
+      .analysis-card .key-value {
+        font-family: "SF Mono", "Fira Code", monospace;
+        font-size: 0.38em;
+        color: rgba(192, 57, 43, 0.8);
+        margin-top: 0.6em;
+      }
+
+      /* Mapping table */
+      .mapping-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+        margin-top: 1em;
+        font-size: 0.52em;
+      }
+
+      .mapping-table th {
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        font-size: 0.8em;
+        color: rgba(255, 255, 255, 0.3);
+        font-weight: 600;
+        padding: 0.5em 1em;
+        text-align: left;
+      }
+
+      .mapping-table td {
+        padding: 0.8em 1em;
+        background: rgba(255, 255, 255, 0.03);
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .mapping-table tr td:first-child {
+        border-radius: 8px 0 0 8px;
+        font-weight: 700;
+      }
+
+      .mapping-table tr td:last-child {
+        border-radius: 0 8px 8px 0;
+      }
+
+      .mapping-table .stem-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+
+      /* Lighting slide */
+      .lighting-compare {
+        display: flex;
+        gap: 2em;
+        margin-top: 1.5em;
+        justify-content: center;
+      }
+
+      .lighting-box {
+        flex: 1;
+        max-width: 380px;
+        border-radius: 12px;
+        padding: 3em 2em;
+        text-align: center;
+        position: relative;
+      }
+
+      .lighting-box.low {
+        background: linear-gradient(180deg, #0a0908 0%, #12100e 100%);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .lighting-box.high {
+        background: linear-gradient(180deg, #1a1210 0%, #2a1a14 100%);
+        border: 1px solid rgba(192, 57, 43, 0.2);
+        box-shadow: 0 0 60px rgba(192, 57, 43, 0.08);
+      }
+
+      .lighting-box .energy-label {
+        font-size: 0.45em;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: rgba(255, 255, 255, 0.3);
+        margin-bottom: 0.8em;
+      }
+
+      .lighting-box .energy-icon {
+        font-size: 2.5em;
+        margin-bottom: 0.2em;
+      }
+
+      .lighting-box.low .energy-icon {
+        opacity: 0.2;
+      }
+      .lighting-box.high .energy-icon {
+        opacity: 0.9;
+      }
+
+      .lighting-box .energy-desc {
+        font-size: 0.4em;
+        color: rgba(255, 255, 255, 0.4);
+        line-height: 1.6;
+      }
+
+      /* Tech stack */
+      .stack-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1.2em;
+        margin-top: 1.5em;
+      }
+
+      .stack-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 1.5em 1em;
+        text-align: center;
+      }
+
+      .stack-card .stack-label {
+        font-size: 0.4em;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: rgba(255, 255, 255, 0.3);
+        margin-bottom: 0.6em;
+      }
+
+      .stack-card .stack-items {
+        font-size: 0.45em;
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.8;
+      }
+
+      .stack-card .stack-items strong {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
+      }
+
+      /* Learnings */
+      .learnings {
+        text-align: left;
+        max-width: 700px;
+        margin: 1.5em auto 0;
+      }
+
+      .learning-item {
+        display: flex;
+        gap: 1em;
+        margin-bottom: 1.5em;
+        align-items: flex-start;
+      }
+
+      .learning-num {
+        font-size: 1.5em;
+        font-weight: 800;
+        color: rgba(192, 57, 43, 0.5);
+        line-height: 1;
+        flex-shrink: 0;
+        width: 1.2em;
+        text-align: right;
+      }
+
+      .learning-text {
+        font-size: 0.55em;
+        line-height: 1.6;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .learning-text strong {
+        color: #ffffff;
+        font-weight: 600;
+      }
+
+      /* Future */
+      .future-items {
+        display: flex;
+        flex-direction: column;
+        gap: 1em;
+        margin-top: 1.5em;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .future-item {
+        display: flex;
+        align-items: center;
+        gap: 1em;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 10px;
+        padding: 0.8em 1.2em;
+      }
+
+      .future-icon {
+        font-size: 1.2em;
+        opacity: 0.5;
+        flex-shrink: 0;
+      }
+
+      .future-text {
+        font-size: 0.5em;
+        color: rgba(255, 255, 255, 0.6);
+      }
+
+      .future-text strong {
+        color: rgba(255, 255, 255, 0.85);
+        font-weight: 600;
+      }
+
+      /* Closing */
+      .closing h2 {
+        font-size: 2em;
+        font-weight: 800;
+        line-height: 1.3;
+        margin-bottom: 0.5em;
+      }
+
+      .closing .closing-sub {
+        font-size: 0.55em;
+        color: rgba(255, 255, 255, 0.35);
+        font-weight: 400;
+      }
+
+      /* Demo indicator */
+      .demo-badge {
+        display: inline-block;
+        font-size: 0.35em;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: #c0392b;
+        border: 1px solid rgba(192, 57, 43, 0.4);
+        border-radius: 6px;
+        padding: 0.3em 0.8em;
+        margin-bottom: 1em;
+        font-weight: 600;
+      }
+
+      /* Speaker notes styling */
+      .reveal .speaker-controls-notes .value {
+        font-family: "Inter", sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+      }
+
+      /* Fragment custom */
+      .reveal .fragment.fade-up {
+        transform: translateY(20px);
+      }
+
+      /* Slide number */
+      .reveal .slide-number {
+        font-family: "Inter", sans-serif;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.2);
+      }
+
+      /* Progress bar */
+      .reveal .progress span {
+        background: rgba(192, 57, 43, 0.6);
+      }
+      .title-slide .supervisor {
+        font-size: 0.5em;
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 400;
+        margin-top: 0.8em;
+      }
+
+      .title-slide .supervisor strong {
+        color: rgba(255, 255, 255, 0.95);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <!-- ==================== SLIDE 0: TITLE ==================== -->
+        <section class="title-slide" data-background-color="#0e0d0c">
+          <h1>STEMPlay</h1>
+          <div class="subtitle">
+            Real-Time Music Stem Visualization in a 3D Museum
+          </div>
+          <div class="authors">
+            <span>Nour Mbarek</span> &amp; <span>Wassim Derouiche</span><br />
+            University of Passau
+          </div>
+          <div class="supervisor">
+            Supervisor: <strong>Mr. Alexander Gall</strong>
+          </div>
+
+          <aside class="notes">
+            DO NOT START HERE. Go directly to the live demo (Act 1). This slide
+            is only shown if someone asks to see the title. Open the app in the
+            other tab and click "enter exhibition" immediately.
+          </aside>
+        </section>
+
+        <!-- ==================== SLIDE 2: THE QUESTION ==================== -->
+        <section class="statement" data-background-color="#0e0d0c">
+          <h2>
+            What if you could <span class="accent">see</span> each instrument?
+          </h2>
+          <aside class="notes">
+            ACT 2 - THE WHY (1:30 - 3:00) Let this slide breathe. One sentence,
+            no bullets. Pause for 3-4 seconds after it appears. "Most
+            visualizers treat a song as one signal. A waveform. A spectrum bar.
+            But a song is not one thing."
+          </aside>
+        </section>
+
+        <!-- ==================== SLIDE 3: COMPARISON ==================== -->
+        <section data-background-color="#0e0d0c">
+          <h2 style="font-size: 1.3em; margin-bottom: 0.2em">
+            One signal vs. four stems
+          </h2>
+          <p
+            style="
+              font-size: 0.45em;
+              color: rgba(255, 255, 255, 0.69);
+              margin-bottom: 0;
+            "
+          >
+            Traditional visualizers treat music as one signal. We split it into
+            four.
+          </p>
+          <div class="comparison">
+            <div class="side">
+              <div class="side-label">Traditional</div>
+              <div class="visual-box">
+                <div class="bars">
+                  <div class="bar" style="height: 40px"></div>
+                  <div class="bar" style="height: 75px"></div>
+                  <div class="bar" style="height: 55px"></div>
+                  <div class="bar" style="height: 95px"></div>
+                  <div class="bar" style="height: 60px"></div>
+                  <div class="bar" style="height: 110px"></div>
+                  <div class="bar" style="height: 80px"></div>
+                  <div class="bar" style="height: 45px"></div>
+                  <div class="bar" style="height: 70px"></div>
+                  <div class="bar" style="height: 35px"></div>
+                </div>
+              </div>
+            </div>
+            <div class="vs-divider">VS</div>
+            <div class="side">
+              <div class="side-label">STEMPlay</div>
+              <div class="visual-box">
+                <div class="stems-visual">
+                  <div class="stem-chip stem-drums">DRUMS</div>
+                  <div class="stem-chip stem-bass">BASS</div>
+                  <div class="stem-chip stem-vocals">VOCALS</div>
+                  <div class="stem-chip stem-other">OTHER</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <aside class="notes">
+            "On the left: what every visualizer does. Frequency bars, waveforms.
+            It looks cool for 10 seconds, then it all blends together. You
+            cannot tell what the drums are doing vs. the bass. On the right: we
+            split the song into four stems and give each one its own sculpture.
+            Now you can actually see each layer."
+          </aside>
+        </section>
+
+        <!-- ==================== SLIDE 4: STEM DIAGRAM ==================== -->
+        <section data-background-color="#0e0d0c">
+          <h2 style="font-size: 1.5em; margin-bottom: 0">
+            Four stems, four sculptures
+          </h2>
+          <div class="stem-flow">
+            <div class="stem-row">
+              <div class="stem-name stem-drums">DRUMS</div>
+              <div class="stem-arrow">&rarr;</div>
+              <div class="stem-target">Lattice Columns</div>
+              <div class="stem-behavior">
+                &mdash; vertical stretch, particles, glow
+              </div>
+            </div>
+            <div class="stem-row">
+              <div class="stem-name stem-bass">BASS</div>
+              <div class="stem-arrow">&rarr;</div>
+              <div class="stem-target">Chest Statue</div>
+              <div class="stem-behavior">
+                &mdash; morph-target inflation, glowing core
+              </div>
+            </div>
+            <div class="stem-row">
+              <div class="stem-name stem-vocals">VOCALS</div>
+              <div class="stem-arrow">&rarr;</div>
+              <div class="stem-target">Fracture Bust</div>
+              <div class="stem-behavior">&mdash; animation-driven fracture</div>
+            </div>
+            <div class="stem-row">
+              <div class="stem-name stem-other">OTHER</div>
+              <div class="stem-arrow">&rarr;</div>
+              <div class="stem-target">Chandelier + Painting</div>
+              <div class="stem-behavior">
+                &mdash; swing, spin, fragment drift
+              </div>
+            </div>
+          </div>
+          <aside class="notes">
+            "A song is not one thing. It is layers. Drums give you rhythm, bass
+            gives you weight, vocals give you emotion, and everything else fills
+            the space. We wanted each of those to have its own physical form.
+            Each mapping was designed to match the character of the sound. Drums
+            are percussive, so the columns snap and burst. Bass is heavy, so the
+            statue inflates. Vocals are expressive, so the bust cracks open."
+            Keep this slide up a bit longer. This is the core concept.
+          </aside>
+        </section>
+
+        <!-- ==================== SLIDE 5: ARCHITECTURE ==================== -->
+        <section data-background-color="#0e0d0c">
+          <h2 style="font-size: 1.3em; margin-bottom: 0">How it works</h2>
+          <div class="pipeline">
+            <div class="node highlight">Upload /<br />SoundCloud URL</div>
+            <div class="pipe-arrow">&rarr;</div>
+            <div class="node highlight">Demucs<br />Backend</div>
+            <div class="pipe-arrow">&rarr;</div>
+            <div class="node">4 WAV<br />Stems</div>
+            <div class="pipe-arrow">&rarr;</div>
+            <div class="node">Web Audio API<br />FFT Analysis</div>
+            <div class="pipe-arrow">&rarr;</div>
+            <div class="node">React Three<br />Fiber</div>
+            <div class="pipe-arrow">&rarr;</div>
+            <div class="node">3D Museum<br />Scene</div>
+          </div>
+          <aside class="notes">
+            ACT 3 - HOW IT WORKS (3:00 - 6:00) Walk through left to right in ~30
+            seconds: "You give us a song, either upload a file or paste a
+            SoundCloud link. The backend runs Demucs, which is an AI model by
+            Meta that separates the track into four stems. Those stems get sent
+            to the browser, where the Web Audio API runs real-time FFT analysis.
+            The analysis data drives 3D sculptures through React Three Fiber."
+            IMPORTANT: While on this slide, paste the SoundCloud URL into the
+            app and kick off the separation. Say: "In fact, let me show you. I
+            will paste a SoundCloud link right now, and the backend will
+            separate it while we keep talking." Then continue to the next slide.
+            The separation runs in the background.
+          </aside>
+        </section>
+
+        <!-- ==================== SLIDE 6: AUDIO ANALYSIS ==================== -->
+        <section data-background-color="#0e0d0c">
+          <h2 style="font-size: 1.3em; margin-bottom: 0">Audio analysis</h2>
+          <div class="analysis-grid">
+            <div class="analysis-card">
+              <div class="card-icon">~</div>
+              <h3>Envelope</h3>
+              <p>
+                Smoothed amplitude follower.<br />Snaps to hits, decays
+                naturally.
+              </p>
+            </div>
+            <div class="analysis-card">
+              <div class="card-icon">&Xi;</div>
+              <h3>Average Energy</h3>
+              <p>Mean of all FFT frequency bins,<br />normalized to [0, 1].</p>
+            </div>
+            <div class="analysis-card">
+              <div class="card-icon">&loz;</div>
+              <h3>Beat Signal</h3>
+              <p>Fires when energy crosses<br />a threshold, with cooldown.</p>
+            </div>
+          </div>
+          <aside class="notes">
+            "Each stem gets its own analyser running a 2048-point FFT. From that
+            we extract three things: First, an envelope follower. It has fast
+            attack so visuals react instantly to hits, but slow release so they
+            do not flicker. This is the single most important parameter. Get it
+            wrong and the whole thing feels either sluggish or jittery. Second,
+            average energy. Just the mean of all frequency bins. This drives the
+            overall intensity of each sculpture. Third, a beat signal.
+            Specifically for drums. When the energy crosses a threshold, it
+            fires, but with a cooldown so it does not double-trigger. That
+            drives the particle bursts on the columns."
+          </aside>
+        </section>
+
+        <!-- ==================== SLIDE 8: REACTIVE LIGHTING ==================== -->
+        <section data-background-color="#0e0d0c">
+          <h2 style="font-size: 1.3em; margin-bottom: 0">
+            The secret ingredient: reactive lighting
+          </h2>
+          <div class="lighting-compare">
+            <div class="lighting-box low">
+              <div class="energy-label">Low energy</div>
+              <div class="energy-icon">&#9679;</div>
+              <div class="energy-desc">
+                Dim ambient, cool tones,<br />
+                subtle shadows, calm room
+              </div>
+            </div>
+            <div class="lighting-box high">
+              <div class="energy-label">High energy</div>
+              <div class="energy-icon">&#9679;</div>
+              <div class="energy-desc">
+                Warm spotlights bloom,<br />
+                intense shadows, room breathes
+              </div>
+            </div>
+          </div>
+
+          <aside class="notes">
+            "The sculptures are the stars, but the lighting is what ties the
+            room together. Every spotlight in this museum is subtly reacting to
+            the audio. Drum hits brighten the warm point light. Vocal energy
+            lifts the top spotlight. Bass shifts the side fills. You do not
+            consciously notice it when it is there. But take it away and the
+            scene feels dead. It is like film lighting, you only notice bad
+            lighting, never good lighting. The camera also responds. Drum hits
+            cause a subtle shake. Bass pulls it closer. Combined with mouse
+            parallax and idle drift, the whole room breathes."
+          </aside>
+        </section>
+
+        <!-- ==================== SLIDE 9: DEMO 2 PLACEHOLDER ==================== -->
+        <section data-background-color="#0e0d0c">
+          <div class="demo-badge">Live Demo 2</div>
+          <h2
+            style="
+              font-size: 1.6em;
+              font-weight: 600;
+              color: rgba(255, 255, 255, 0.5);
+            "
+          >
+            Same museum, different song
+          </h2>
+          <p
+            style="
+              font-size: 0.5em;
+              color: rgba(255, 255, 255, 0.25);
+              margin-top: 1em;
+            "
+          >
+            Live SoundCloud separation &bull; Separated during the talk
+          </p>
+          <aside class="notes">
+            ACT 4 - SECOND DEMO (6:00 - 9:00) Switch to the app. The SoundCloud
+            track should be ready. If still separating: fill with a quick
+            question, or switch to "Du Bist Genug" test track as fallback. Say
+            "let me use one we prepared earlier." Before clicking play:
+            "Remember that SoundCloud link I pasted a few minutes ago? The
+            backend downloaded it, ran it through Demucs, and split it into four
+            stems. No pre-processing, no manual setup. Let us see how the same
+            museum reacts to a completely different song." Click play. Let it
+            run ~15 seconds with all stems. Then do the SUBTRACTIVE demo
+            (opposite of Act 1): "Watch what happens when I pull out the
+            drums..." [mute drums] "...and now the bass..." [mute bass] "Two
+            layers gone, and the whole feel changes." Unmute everything for the
+            finale moment. Then switch back to slides (next slide).
+          </aside>
+        </section>
+
+        <!-- ==================== SLIDE 10: TECH STACK ==================== -->
+        <section data-background-color="#0e0d0c">
+          <h2 style="font-size: 1.3em; margin-bottom: 0">Tech stack</h2>
+          <div class="stack-grid">
+            <div class="stack-card">
+              <div class="stack-label">Frontend</div>
+              <div class="stack-items">
+                <strong>React 18</strong><br />
+                <strong>Three.js</strong> 0.139<br />
+                React Three Fiber<br />
+                drei<br />
+                <strong>Zustand</strong><br />
+                Web Audio API
+              </div>
+            </div>
+            <div class="stack-card">
+              <div class="stack-label">Backend</div>
+              <div class="stack-items">
+                <strong>FastAPI</strong><br />
+                <strong>Demucs</strong> (Meta)<br />
+                yt-dlp<br />
+                FFmpeg
+              </div>
+            </div>
+            <div class="stack-card">
+              <div class="stack-label">Assets</div>
+              <div class="stack-items">
+                <strong>Blender</strong><br />
+                GLB / GLTF<br />
+                PBR Textures<br />
+                Custom GLSL
+              </div>
+            </div>
+          </div>
+
+          <aside class="notes">
+            ACT 5 - DETAILS (9:00 - 11:00) Quick hits, do not dwell: "Frontend
+            is React with Three.js through React Three Fiber. State management
+            with Zustand. Audio analysis with the Web Audio API. Backend is
+            FastAPI running Demucs for stem separation. yt-dlp handles
+            SoundCloud downloads. FFmpeg for audio conversion. All the 3D models
+            were built in Blender and exported as GLB. Textures are PBR.
+            Particle effects use custom GLSL shaders. You just saw the whole
+            thing in action. Paste a link, the backend separates it, the browser
+            visualizes it."
+          </aside>
+        </section>
+
+        <!-- ==================== SLIDE 12: WHAT'S NEXT ==================== -->
+        <section data-background-color="#0e0d0c">
+          <h2 style="font-size: 1.3em; margin-bottom: 0">What's next</h2>
+          <div class="future-items">
+            <div class="future-item">
+              <div class="future-icon">&#9741;</div>
+              <div class="future-text">
+                <strong>More sources</strong> &mdash; YouTube, Spotify, direct
+                file upload from any device
+              </div>
+            </div>
+            <div class="future-item">
+              <div class="future-icon">&#9670;</div>
+              <div class="future-text">
+                <strong>More scenes</strong> &mdash; User-selectable sculpture
+                sets and environments
+              </div>
+            </div>
+            <div class="future-item">
+              <div class="future-icon">&#8644;</div>
+              <div class="future-text">
+                <strong>Multi-user viewing</strong> &mdash; Shared museum
+                sessions over WebRTC
+              </div>
+            </div>
+          </div>
+          <aside class="notes">
+            Keep this quick, 20 seconds max: "Where could this go? More input
+            sources, so you can paste a YouTube link or connect Spotify.
+            Different visual environments, not just one museum. And multi-user
+            viewing, so multiple people can be in the same museum, hearing and
+            seeing the same music together. But for now..." Then switch to the
+            live demo for the closing (next slide).
+          </aside>
+        </section>
+
+        <!-- ==================== SLIDE 13: CLOSING ==================== -->
+        <section class="closing" data-background-color="#0e0d0c">
+          <h2>
+            Every kick, every note, every breath has a
+            <span style="color: #c0392b">shape</span>.
+          </h2>
+          <div class="closing-sub">That is STEMPlay.</div>
+          <aside class="notes">
+            ACT 6 - CLOSE (11:00 - 12:00) Switch back to the live demo. The
+            SoundCloud track is ideal (freshest in the audience's mind). Let the
+            music play. "We built a museum where the art only exists because of
+            the music. Every kick, every note, every breath has a shape. That is
+            STEMPlay." Let the demo run for 5-10 seconds. Then pause.
+            "Questions?"
+          </aside>
+        </section>
+        <!-- ==================== SLIDE 8: THANK YOU ==================== -->
+        <section class="thankyou" data-background-color="#0e0d0c">
+          <h2>Thank you.</h2>
+          <div class="closing-sub">Questions are welcome.</div>
+          <aside class="notes">
+            Final slide. Pause here, thank the audience and the supervisor, and
+            open the floor for questions.
+          </aside>
+        </section>
+        <!-- ==================== SLIDE 7: MAPPING TABLE ==================== -->
+        <section data-background-color="#0e0d0c">
+          <h2 style="font-size: 1.3em; margin-bottom: 0">
+            Stem-to-sculpture mapping
+          </h2>
+          <table class="mapping-table">
+            <thead>
+              <tr>
+                <th>Stem</th>
+                <th>Sculpture</th>
+                <th>Reactive behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span class="stem-dot" style="background: #c0392b"></span
+                  >Drums
+                </td>
+                <td>Lattice Columns (x4)</td>
+                <td>
+                  Vertical stretch on beat, emissive glow, dust particle bursts
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="stem-dot" style="background: #e67e22"></span>Bass
+                </td>
+                <td>Chest Statue</td>
+                <td>
+                  Morph-target inflation, glowing core sphere, positional lift
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="stem-dot" style="background: #8e44ad"></span
+                  >Vocals
+                </td>
+                <td>Fracture Bust</td>
+                <td>Animation timeline scrubbing driven by vocal envelope</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="stem-dot" style="background: #2980b9"></span
+                  >Other
+                </td>
+                <td>Chandelier + Painting</td>
+                <td>Pendulum swing, spin, painting fragment drift and sway</td>
+              </tr>
+            </tbody>
+          </table>
+          <aside class="notes">
+            "Each mapping was designed to match the character of the sound.
+            Drums are percussive and instantaneous, so the columns snap
+            vertically and emit burst particles. It is the most physically
+            violent response. Bass is about weight and sustain, so the statue
+            inflates using morph targets. A red core sphere pulses inside on
+            transients. Vocals are expressive and continuous, so we tied them to
+            a fracture animation. The louder the vocal energy, the more the bust
+            cracks open. It scrubs through the animation timeline. And
+            everything else, synths, pads, atmospherics, drives the chandelier
+            which swings like a pendulum, and the painting whose fragments drift
+            apart and sway."
+          </aside>
+        </section>
+        <!-- ==================== SLIDE 11: WHAT WE LEARNED ==================== -->
+        <section data-background-color="#0e0d0c">
+          <h2 style="font-size: 1.3em; margin-bottom: 0">What we learned</h2>
+          <div class="learnings">
+            <div class="learning-item">
+              <div class="learning-num">1</div>
+              <div class="learning-text">
+                <strong>Envelope smoothing makes or breaks the feel.</strong
+                ><br />
+                Fast attack, slow release. Get the ratio wrong and visuals feel
+                either sluggish or jittery.
+              </div>
+            </div>
+            <div class="learning-item">
+              <div class="learning-num">2</div>
+              <div class="learning-text">
+                <strong>Reactive lighting is the glue.</strong><br />
+                The sculptures alone look like separate animations. Audio-driven
+                lighting ties the whole room into one cohesive experience.
+              </div>
+            </div>
+            <div class="learning-item">
+              <div class="learning-num">3</div>
+              <div class="learning-text">
+                <strong>The web platform is ready for this.</strong><br />
+                Web Audio API, WebGL, and React's component model handle
+                real-time audio-visual work surprisingly well.
+              </div>
+            </div>
+          </div>
+          <aside class="notes">
+            Go through each one briefly: "Three big takeaways. First, the
+            envelope smoothing parameters matter more than anything else. We
+            spent a lot of time tuning the attack and release values. Too fast
+            and everything flickers. Too slow and it feels disconnected from the
+            music. Second, audio-reactive lighting is what makes the scene feel
+            like one thing instead of four separate animations. It is subtle,
+            but it is the difference between a tech demo and something that
+            feels alive. Third, we were surprised by how capable the web
+            platform is for this kind of real-time work. Web Audio API is solid,
+            WebGL handles the rendering, and React Three Fiber makes it
+            manageable."
+          </aside>
+        </section>
+      </div>
+      <!-- /.slides -->
+    </div>
+    <!-- /.reveal -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+    <script>
+      Reveal.initialize({
+        hash: true,
+        slideNumber: "c/t",
+        showNotes: false,
+        width: 1280,
+        height: 720,
+        margin: 0.08,
+        transition: "fade",
+        transitionSpeed: "slow",
+        backgroundTransition: "fade",
+        center: true,
+        controls: false,
+        progress: true,
+      });
+    </script>
+  </body>
+</html>
